@@ -2,3 +2,11 @@ bottleneck/train/*
 bottleneck/validation/*
 output/best-weights*
 dataset_prediction/crops/*
+fashion_data/
+__pycache__/
+.idea/
+*.pyc
+bottleneck/btl_train.txt
+dataset/test/
+dataset/train/
+dataset/validation/

@@ -13,6 +13,7 @@ pip install --upgrade tensorflow-gpu  # for Python 2.7 and GPU
 
 # Dependencies
 sudo apt install -y python-tk
+sudo apt install nvidia-cuda-dev
 pip install -r requirements.txt 
 ```
 
