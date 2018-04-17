@@ -27,6 +27,7 @@ img/Sheer_Pleated-Front_Blouse/img_00000006.jpg                        3
 ### IMPORTS
 from __future__ import print_function
 
+import argparse
 from config import *
 from selective_search import selective_search_bbox
 
@@ -245,6 +246,7 @@ def calculate_bbox_score_and_save_img(image_path_name, dataset_image_path,
         # display_bbox(image_path_name, boxA, boxB)
 
         # img_crop = img_read.crop((y, x, y+w, x+h))
+        logging.debug('crop {}, {}, {}, {}'.format(x, y, x + w, y + h))
         img_crop = img_read.crop((x, y, x + w, y + h))
 
         image_save_name = image_path_name.split('/')[-2] + '_' + \
@@ -254,7 +256,14 @@ def calculate_bbox_score_and_save_img(image_path_name, dataset_image_path,
             x) + '-' + str(y) + '-' + str(x + w) + '-' + str(
             y + h) + '_iou_' + str(iou) + '.jpg'
         logging.debug('image_save_path_name {}'.format(image_save_path_name))
-        img_crop.save(image_save_path_name)
+        try:
+            img_crop.save(image_save_path_name)
+        except:
+            logging.debug('cropping to {}, {}, {}, {} failed'.format(x, y, x + w, y + h))
+            logging.debug(
+                'cropping to FIXES {}, {}, {}, {} failed'.format(gt_x1, y, x + w - gt_x1, y + h))
+            img_crop = img_read.crop((gt_x1, y, x + w - gt_x1, y + h))
+            img_crop.save(image_save_path_name)
         logging.debug('img_crop {} {} {}'.format(img_crop.format, img_crop.size,
                                                  img_crop.mode))
 
@@ -278,7 +287,8 @@ def calculate_bbox_score_and_save_img(image_path_name, dataset_image_path,
 
 
 # Generate images from fashon-data into dataset
-def generate_dataset_images(category_names):
+def generate_dataset_images(category_names, continue_from=None):
+    skip = False if continue_from is None else True
     count = 0
     with open(
             fashion_dataset_path + '/Anno/list_bbox.txt') as file_list_bbox_ptr:
@@ -293,6 +303,15 @@ def generate_dataset_images(category_names):
                 for line in file_list_category_img:
                     line = line.split()
                     image_path_name = line[0]
+                    image_path_name_src_ = os.path.join(fashion_dataset_path,
+                                                       'Img',
+                                                       image_path_name)
+                    if skip and continue_from != image_path_name_src_:
+                        count = count + 1
+                        continue
+
+                    skip = False
+
                     logging.debug('image_path_name {}'.format(
                         image_path_name))  # img/Tailored_Woven_Blazer/img_00000051.jpg
                     image_name = line[0].split('/')[-1]
@@ -394,9 +413,17 @@ def display_category_data():
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--continue_from',
+                        type=str,
+                        dest='continue_from',
+                        default=None,
+                        help="Continue from.")
+    args = parser.parse_args()
+    continue_from = args.continue_from if args.continue_from else None
     create_dataset_split_structure()
     category_names = get_category_names()
     logging.debug('category_names {}'.format(category_names))
     create_category_structure(category_names)
-    generate_dataset_images(category_names)
+    generate_dataset_images(category_names, continue_from=continue_from)
     display_category_data()
